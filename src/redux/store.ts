@@ -1,11 +1,40 @@
-import { configureStore } from "@reduxjs/toolkit";
-import bookReducer, { bookSlice } from "./features/bookSlice"; // ✅ import slice ด้วย
+import { configureStore, combineReducers } from "@reduxjs/toolkit";
+import { bookSlice } from "./features/bookSlice";
+import storage from 'redux-persist/lib/storage';
+import {
+  persistStore,
+  persistReducer,
+  FLUSH,
+  REHYDRATE,
+  PAUSE,
+  PERSIST,
+  PURGE,
+  REGISTER,
+} from 'redux-persist';
+
+const rootReducer = combineReducers({
+    bookSlice: bookSlice.reducer 
+});
+
+const persistConfig = {
+  key: 'root', 
+  storage, 
+  whitelist: ['bookSlice'] 
+};
+
+const persistedReducer = persistReducer(persistConfig, rootReducer);
 
 export const store = configureStore({
-  reducer: {
-    bookSlice: bookSlice.reducer
-  },
+  reducer: persistedReducer, 
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware({
+      serializableCheck: {
+        ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
+      },
+    }),
 });
+
+export const persistor = persistStore(store);
 
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;
